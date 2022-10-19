@@ -4,7 +4,8 @@ import 'package:web3dart/web3dart.dart';
 
 class WalletInstance {
   EthereumAddress walletAddress;
-  String initImplementation;
+  EthereumAddress moduleManager;
+  EthereumAddress socialRecovery;
   String initOwner;
   List<EthereumAddress> initGuardians;
   String salt;
@@ -12,7 +13,8 @@ class WalletInstance {
 
   WalletInstance(
       {required this.walletAddress,
-      required this.initImplementation,
+      required this.moduleManager,
+      required this.socialRecovery,
       required this.initOwner,
       required this.initGuardians,
       required this.salt,
@@ -20,15 +22,17 @@ class WalletInstance {
 
   WalletInstance.fromJson(Map<String, dynamic> json)
       : walletAddress = EthereumAddress.fromHex(json['walletAddress']),
-        initImplementation = json['initImplementation'],
+        moduleManager = EthereumAddress.fromHex(json['moduleManager']),
+        socialRecovery = EthereumAddress.fromHex(json['socialRecovery']),
         initOwner = json['initOwner'],
         initGuardians = List<EthereumAddress>.from(json['initGuardians'].map((e) => EthereumAddress.fromHex(e))),
         salt = json['salt'],
         encryptedSigner = json['encryptedSigner'];
 
   Map<String, dynamic> toJson() => {
-    'walletAddress': walletAddress.hex,
-    'initImplementation': initImplementation,
+    'walletAddress': walletAddress.hexEip55,
+    'moduleManager': moduleManager.hexEip55,
+    'socialRecovery': socialRecovery.hexEip55,
     'initOwner': initOwner,
     'initGuardians': initGuardians.map((e) => e.hex).toList(),
     'salt': salt,

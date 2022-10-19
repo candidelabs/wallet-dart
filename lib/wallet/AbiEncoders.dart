@@ -1,4 +1,4 @@
-import 'package:web3dart/web3dart.dart';
+import "package:web3dart/web3dart.dart";
 
 class AbiEncoders {
   /*static ContractAbi ownerSignMessage = ContractAbi.fromJson("""[
@@ -52,9 +52,24 @@ class AbiEncoders {
   static ContractAbi requestIdCoder = ContractAbi.fromJson("""[
     {
       "inputs": [
-        { "name": "1", "type": "bytes32" },
-        { "name": "2", "type": "address" },
-        { "name": "3", "type": "uint" }
+        {
+          "components": [
+            { "type": "address", "name": "sender" },
+            { "type": "uint256", "name": "nonce" },
+            { "type": "bytes", "name": "initCode" },
+            { "type": "bytes", "name": "callData" },
+            { "type": "uint256", "name": "callGasLimit" },
+            { "type": "uint256", "name": "verificationGasLimit" },
+            { "type": "uint256", "name": "preVerificationGas" },
+            { "type": "uint256", "name": "maxFeePerGas" },
+            { "type": "uint256", "name": "maxPriorityFeePerGas" },
+            { "type": "address", "name": "paymasterAndData" },
+            { "type": "bytes", "name": "paymasterData" },
+            { "type": "bytes", "name": "signature" }
+          ],
+          "name": "userOp",
+          "type": "tuple"
+        }
       ],
       "name": "",
       "type": "function"

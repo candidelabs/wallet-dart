@@ -1,11 +1,14 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:encryptor/encryptor.dart';
 import 'package:steel_crypt/steel_crypt.dart';
 import 'package:wallet_dart/constants/constants.dart';
-import 'package:wallet_dart/contracts/factories/WalletProxy.g.dart';
+import 'package:wallet_dart/contracts/entrypoint.dart';
+import 'package:wallet_dart/contracts/factories/EIP4337Manager.g.dart';
+import 'package:wallet_dart/contracts/factories/SafeProxy.g.dart';
+import 'package:wallet_dart/contracts/factories/SocialRecoveryModule.g.dart';
 import 'package:wallet_dart/contracts/wallet.dart';
+import 'package:wallet_dart/utils/encode.dart';
 import 'package:wallet_dart/wallet/UserOperation.dart';
 import 'package:wallet_dart/wallet/wallet_instance.dart';
 import 'package:web3dart/crypto.dart';
@@ -34,7 +37,7 @@ class WalletHelpers {
     }
   }
 
-  static Future<WalletInstance> createRecovery(String walletAddress, String password, String salt) async{
+  static Future<WalletInstance> createRecovery(String walletAddress, String moduleManagerAddress, String socialRecoveryAddress, String password, String salt) async{
     var rng = Random.secure();
     EthPrivateKey signer = EthPrivateKey.createRandom(rng);
     //
@@ -45,7 +48,8 @@ class WalletHelpers {
     //
     return WalletInstance(
       walletAddress: EthereumAddress.fromHex(walletAddress),
-      initImplementation: CWallet.address.hex,
+      moduleManager: EthereumAddress.fromHex(moduleManagerAddress),
+      socialRecovery: EthereumAddress.fromHex(socialRecoveryAddress),
       initOwner: initOwner.hex,
       initGuardians: [],
       salt: salt,
@@ -56,7 +60,7 @@ class WalletHelpers {
     );
   }
 
-  static Future<WalletInstance> createRandom(String password, String salt) async{
+  static Future<WalletInstance> createRandom(String password, String salt, [List<EthereumAddress> initGuardians = const []]) async{
     var rng = Random.secure();
     EthPrivateKey signer = EthPrivateKey.createRandom(rng);
     //
@@ -65,11 +69,17 @@ class WalletHelpers {
     //
     EthereumAddress initOwner = await signer.extractAddress();
     //
+    EthereumAddress moduleManager = EthereumAddress.fromHex(getWalletManagerAddress(salt));
+    EthereumAddress socialRecovery = EthereumAddress.fromHex(getSocialRecoveryAddress(salt));
+    //
     return WalletInstance(
-      walletAddress: EthereumAddress.fromHex(getWalletAddress(initOwner, [])),
-      initImplementation: CWallet.address.hex,
-      initOwner: initOwner.hex,
-      initGuardians: [],
+      walletAddress: EthereumAddress.fromHex(
+        getWalletAddress(initOwner, moduleManager)
+      ),
+      moduleManager: moduleManager,
+      socialRecovery: socialRecovery,
+      initOwner: initOwner.hexEip55,
+      initGuardians: initGuardians,
       salt: salt,
       encryptedSigner: aesCrypt.cbc.encrypt(
         inp: bytesToHex(signer.privateKey, include0x: true),
@@ -78,24 +88,59 @@ class WalletHelpers {
     );
   }
 
-  static String getWalletAddress(EthereumAddress initOwner, List<EthereumAddress> initGuardians){
+  static String getWalletAddress(EthereumAddress initOwner, EthereumAddress moduleManager){
     return _WalletHelperUtils.getCreate2Address(
       Constants.singletonFactoryAddress,
       hexToBytes(bytesToHex(String.fromCharCode(UserOperation.initNonce).codeUnits, include0x: true, forcePadLength: 64)),
-      keccak256(getInitCode(initOwner, initGuardians)),
+      keccak256(getInitCode(initOwner, moduleManager)),
     );
   }
 
-  static Uint8List getInitCode(EthereumAddress initOwner, List<EthereumAddress> initGuardians){
-    var walletFunctionData = CWallet.interface.self.function("initialize").encodeCall([initOwner, []]);
+  static String getWalletManagerAddress(String _salt){
+    Uint8List salt = keccak256(Uint8List.fromList("${_salt}_moduleManager".codeUnits));
+    return _WalletHelperUtils.getCreate2Address(
+      Constants.singletonFactoryAddress,
+      salt,
+      keccak256(getManagerInitCode()),
+    );
+  }
+
+  static String getSocialRecoveryAddress(String _salt, {String suffix = "_socialRecovery"}){ // todo remove suffix
+    Uint8List salt = keccak256(Uint8List.fromList("${_salt}$suffix".codeUnits));
+    return _WalletHelperUtils.getCreate2Address(
+      Constants.singletonFactoryAddress,
+      salt,
+      keccak256(getSocialRecoveryInitCode()),
+    );
+  }
+
+  static Uint8List getInitCode(EthereumAddress initOwner, EthereumAddress moduleManager){
+    EthereumAddress gnosisSafeSingleton = EthereumAddress.fromHex("0x3E5c63644E683549055b9Be8653de26E0B4CD36E");
     //
-    var deployFunction = CWallet.proxyInterface.self.functions.where((element) => element.name == "").first;
-    var deployCodeFull = deployFunction.encodeCall([CWallet.address, walletFunctionData]);
-    var deployCode = deployCodeFull.sublist(4);
+    var walletProxyArgsEncoded = encodeAbi(
+        ['address', 'address', 'address'],
+        [gnosisSafeSingleton, moduleManager, initOwner]);
     //
     LengthTrackingByteSink sink = LengthTrackingByteSink();
-    sink.add(WalletProxy.byteCode);
-    sink.add(deployCode);
+    sink.add(SafeProxy.byteCode);
+    sink.add(walletProxyArgsEncoded);
+    return sink.asBytes();
+  }
+
+  static Uint8List getManagerInitCode(){
+    var managerArgsEncoded = encodeAbi(
+        ['address'],
+        [CEntrypoint.address]);
+    //
+    LengthTrackingByteSink sink = LengthTrackingByteSink();
+    sink.add(EIP4337Manager.byteCode);
+    sink.add(managerArgsEncoded);
+    return sink.asBytes();
+  }
+
+  static Uint8List getSocialRecoveryInitCode(){
+    LengthTrackingByteSink sink = LengthTrackingByteSink();
+    sink.add(SocialRecoveryModule.byteCode);
     return sink.asBytes();
   }
 }

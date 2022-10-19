@@ -6,13 +6,13 @@ import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
 import 'package:web3dart/src/utils/length_tracking_byte_sink.dart';
 
-var _regexBytes = RegExp(r"^bytes([0-9]+)$");
+var _regexBytes = RegExp(r"^(bytes)([0-9]+)$");
 var _regexNumber = RegExp(r"^(u?int)([0-9]*)$");
 
 class Message {
   static userOperation(UserOperation op){
     return keccak256(
-        _solidityPack(
+        solidityPack(
             [
               "address",
               "uint256",
@@ -44,7 +44,7 @@ class Message {
   }
 
 
-  static Uint8List _solidityPack(List<String> types, List<dynamic> values){
+  static Uint8List solidityPack(List<String> types, List<dynamic> values){
     if (values.length != types.length){
       throw ArgumentError("wrong number of values; expected ${ types.length }");
     }
@@ -70,9 +70,9 @@ class Message {
       return Uint8List.fromList(utf8.encode(value));
     }
     //
-    var match = _regexNumber.allMatches(type);
-    if (match.isNotEmpty) {
-      var size = int.parse(match.length > 1 ? match.elementAt(2).input : "256");
+    var _numMatch = _regexNumber.allMatches(type);
+    if (_numMatch.isNotEmpty) {
+      var size = int.parse(_numMatch.length > 1 ? _numMatch.elementAt(2).input : "256");
       if ((size % 8 != 0) || size == 0 || size > 256) {
         throw ArgumentError("invalid number type");
       }
@@ -84,6 +84,30 @@ class Message {
 
       return result;
     }
+    /*var _bytesMatch = _regexBytes.allMatches(type);
+    if (_bytesMatch.isNotEmpty) {
+      print(_bytesMatch.toList().map((e) => e.groupNames.toList()));
+      var size = int.parse(_bytesMatch.length > 1 ? _bytesMatch.elementAt(2).input : "32");
+      print(_bytesMatch);
+      print(_bytesMatch.length);
+
+      if (size == 0 || size > 32) {
+        throw ArgumentError("invalid bytes type");
+      }
+      if (value is String){
+        value = hexToBytes(value);
+      }
+      Uint8List bytesValue = value;
+      if (bytesValue.length != size) {
+        throw ArgumentError("invalid value for $type");
+      }
+      return value;
+    }*/
+
+    if (value is Uint8List){
+      return value;
+    }
+
     if (value is String){
       return hexToBytes(value);
     }

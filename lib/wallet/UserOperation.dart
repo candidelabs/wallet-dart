@@ -1,14 +1,21 @@
 import 'dart:typed_data';
 
+import 'package:logger/logger.dart';
 import 'package:magic_sdk/magic_sdk.dart';
+import 'package:wallet_dart/contracts/entrypoint.dart';
+import 'package:wallet_dart/utils/encode.dart';
 import 'package:wallet_dart/wallet/AbiEncoders.dart';
 import 'package:wallet_dart/wallet/Message.dart';
 import 'package:web3dart/crypto.dart';
+import 'package:web3dart/src/utils/length_tracking_byte_sink.dart';
+import 'package:convert/convert.dart';
 import 'package:web3dart/web3dart.dart';
 
 class UserOperation {
   //
+  // static const defaultGas = 6000000;
   static const defaultGas = 215000;
+  // static const defaultGas = 2150000;
   static const _defaultMaxFee = 50000000000; // 50 Gwei
   static const initNonce = 0;
   static const nullCode = "0x";
@@ -25,6 +32,7 @@ class UserOperation {
   EthereumAddress paymaster;
   String paymasterData;
   String signature;
+  String managerSalt;
 
   UserOperation(
       {required this.sender,
@@ -38,7 +46,8 @@ class UserOperation {
       required this.maxPriorityFeePerGas,
       required this.paymaster,
       required this.paymasterData,
-      required this.signature
+      required this.signature,
+      required this.managerSalt
       });
 
   UserOperation.fromJson(Map<String, dynamic> json)
@@ -53,10 +62,11 @@ class UserOperation {
         maxPriorityFeePerGas = json['maxPriorityFeePerGas'],
         paymaster = EthereumAddress.fromHex(json['paymaster']),
         paymasterData = json['paymasterData'],
-        signature = json['signature'];
+        signature = json['signature'],
+        managerSalt = json['managerSalt'];
 
   Map<String, dynamic> toJson() => {
-    'sender': sender.hex,
+    'sender': sender.hexEip55,
     'nonce': nonce,
     'initCode': initCode,
     'callData': callData,
@@ -65,10 +75,29 @@ class UserOperation {
     'preVerificationGas': preVerificationGas,
     'maxFeePerGas': maxFeePerGas,
     'maxPriorityFeePerGas': maxPriorityFeePerGas,
-    'paymaster': paymaster.hex,
+    'paymaster': paymaster.hexEip55,
     'paymasterData': paymasterData,
     'signature': signature,
+    'managerSalt': managerSalt,
   };
+
+  List<dynamic> toList({bool hexRepresentation = false}) => [
+    hexRepresentation ? sender.hexEip55 : sender,
+    hexRepresentation ? nonce.toString() : BigInt.from(nonce),
+    //hexRepresentation ? initCode : (initCode == "0x" || initCode.isEmpty ? nullCodeBytes : hexToBytes(initCode)),
+    hexRepresentation ? initCode : hexToBytes(initCode),
+    hexRepresentation ? callData : hexToBytes(callData),
+    hexRepresentation ? callGas.toString() : BigInt.from(callGas),
+    hexRepresentation ? verificationGas.toString() : BigInt.from(verificationGas),
+    hexRepresentation ? preVerificationGas.toString() : BigInt.from(preVerificationGas),
+    hexRepresentation ? maxFeePerGas.toString() : BigInt.from(maxFeePerGas),
+    hexRepresentation ? maxPriorityFeePerGas.toString() : BigInt.from(maxPriorityFeePerGas),
+    hexRepresentation ? paymaster.hexEip55 : paymaster,
+    //hexRepresentation ? paymasterData : (paymasterData == "0x" || paymasterData.isEmpty ? nullCodeBytes : hexToBytes(paymasterData)),
+    hexRepresentation ? paymasterData : hexToBytes(paymasterData),
+    //hexRepresentation ? signature : (signature == "0x" || signature.isEmpty ? Uint8List.fromList([0, 0]) : hexToBytes(signature))
+    hexRepresentation ? signature : hexToBytes(signature)
+  ];
 
   static UserOperation get({
     EthereumAddress? sender,
@@ -83,6 +112,7 @@ class UserOperation {
     EthereumAddress? paymaster,
     String? paymasterData,
     String? signature,
+    String? managerSalt,
   }){
     return UserOperation(
       sender: sender ?? EthereumAddress(Uint8List(EthereumAddress.addressByteLength)),
@@ -96,41 +126,30 @@ class UserOperation {
       maxPriorityFeePerGas: maxPriorityFeePerGas ?? _defaultMaxFee,
       paymaster: paymaster ?? EthereumAddress(Uint8List(EthereumAddress.addressByteLength)),
       paymasterData: paymasterData ?? nullCode,
-      signature: signature ?? nullCode
+      signature: signature ?? nullCode,
+      managerSalt: managerSalt ?? nullCode,
     );
+  }
+
+  Uint8List pack(){
+    List<dynamic> params = this.toList();
+    var abiEncoded = AbiEncoders.requestIdCoder.functions.first.encodeCall([params]).sublist(4);
+    var abiEncodedHex = bytesToHex(abiEncoded);
+    abiEncodedHex = abiEncodedHex.substring(64, abiEncodedHex.length - 64);
+    return hexToBytes(abiEncodedHex);
   }
 
   Future<Uint8List> requestId(EthereumAddress entryPoint, BigInt chainId) async {
-    return keccak256(
-        AbiEncoders.requestIdCoder.functions.first.encodeCall([
-          Message.userOperation(this),
-          entryPoint,
-          chainId
-        ]).sublist(4)
-    );
+    return keccak256(encodeAbi(["bytes32", "address", "uint256"], [keccak256(pack()), entryPoint, chainId]));
   }
 
-  Future<void> sign(Credentials credentials, BigInt chainId) async {
-    var walletSignatureValues = [
-      {
-        "signer": await credentials.extractAddress(),
-        "signature": await credentials.signPersonalMessage(
-          await requestId(EthereumAddress.fromHex("0x6D59643f668d67D4E80a14CB65be02264D3c5aDB"), chainId),
-        ),
-      },
-    ];
+  Future<void> sign(Credentials credentials, BigInt chainId, {Uint8List? overrideRequestId}) async {
+    var _requestId = await requestId(CEntrypoint.address, chainId);
     signature = bytesToHex(
-      AbiEncoders.ownerSignMessage.functions.first.encodeCall([
-        BigInt.zero,
-        [
-          [
-            walletSignatureValues[0]["signer"],
-            walletSignatureValues[0]["signature"],
-          ]
-        ]
-      ]).sublist(4),
-      include0x: true
-    );
+      await credentials.signPersonalMessage(
+        overrideRequestId ?? _requestId,
+      ),
+    include0x: true);
   }
 
 

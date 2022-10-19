@@ -1,0 +1,30 @@
+{
+  "contractName": "SafeProxy",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "singleton",
+          "type": "address"
+        },
+        {
+          "internalType": "contract EIP4337Manager",
+          "name": "aaModule",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "fallback"
+    }
+  ]
+}
