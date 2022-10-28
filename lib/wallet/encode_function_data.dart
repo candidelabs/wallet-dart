@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
 import 'package:wallet_dart/constants/constants.dart';
 import 'package:wallet_dart/contracts/entrypoint.dart';
 import 'package:wallet_dart/contracts/erc20.dart';
@@ -8,7 +7,7 @@ import 'package:wallet_dart/contracts/factories/EIP4337Manager.g.dart';
 import 'package:wallet_dart/contracts/factories/SingletonFactory.g.dart';
 import 'package:wallet_dart/contracts/wallet.dart';
 import 'package:wallet_dart/utils/encode.dart';
-import 'package:wallet_dart/wallet/Message.dart';
+import 'package:wallet_dart/wallet/message.dart';
 import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
 

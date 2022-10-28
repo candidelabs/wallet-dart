@@ -7,7 +7,7 @@ import 'package:wallet_dart/contracts/factories/SocialRecoveryModule.g.dart';
 import 'package:web3dart/web3dart.dart';
 
 class CWallet {
-  static EthereumAddress address = EthereumAddress.fromHex("0x4f7459eFf03cD8C19B5a442d7c9b675A05f66fbf"); // todo edit
+  static EthereumAddress address = EthereumAddress.fromHex("0x3E5c63644E683549055b9Be8653de26E0B4CD36E");
 
   static w.EIP4337Manager interface = w.EIP4337Manager(address: address, client: Constants.web3client);
   static SafeProxy proxyInterface = SafeProxy(address: EthereumAddress(Uint8List(20)), client: Constants.web3client);

@@ -7,9 +7,8 @@ import 'package:wallet_dart/contracts/entrypoint.dart';
 import 'package:wallet_dart/contracts/factories/EIP4337Manager.g.dart';
 import 'package:wallet_dart/contracts/factories/SafeProxy.g.dart';
 import 'package:wallet_dart/contracts/factories/SocialRecoveryModule.g.dart';
-import 'package:wallet_dart/contracts/wallet.dart';
 import 'package:wallet_dart/utils/encode.dart';
-import 'package:wallet_dart/wallet/UserOperation.dart';
+import 'package:wallet_dart/wallet/user_operation.dart';
 import 'package:wallet_dart/wallet/wallet_instance.dart';
 import 'package:web3dart/crypto.dart';
 import 'package:web3dart/src/utils/length_tracking_byte_sink.dart';
@@ -105,8 +104,8 @@ class WalletHelpers {
     );
   }
 
-  static String getSocialRecoveryAddress(String _salt, {String suffix = "_socialRecovery"}){ // todo remove suffix
-    Uint8List salt = keccak256(Uint8List.fromList("${_salt}$suffix".codeUnits));
+  static String getSocialRecoveryAddress(String _salt){
+    Uint8List salt = keccak256(Uint8List.fromList("${_salt}_socialRecovery".codeUnits));
     return _WalletHelperUtils.getCreate2Address(
       Constants.singletonFactoryAddress,
       salt,
