@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:steel_crypt/steel_crypt.dart';
 import 'package:wallet_dart/constants/constants.dart';
 import 'package:wallet_dart/contracts/entrypoint.dart';
@@ -15,14 +16,20 @@ import 'package:web3dart/src/utils/length_tracking_byte_sink.dart';
 import 'package:web3dart/web3dart.dart';
 
 class WalletHelpers {
-  static String _generatePasswordKey(String password, String salt){
+
+  static Future<String> _generatePasswordKey(Map args) async{
     PassCrypt scrypt = PassCrypt.scrypt(cpu: 16384, mem: 8, par: 1);
-    return scrypt.hash(salt: salt, inp: password, len: 32);
+    return scrypt.hash(salt: args["salt"], inp: args["password"], len: 32);
   }
 
-  static Credentials? decryptSigner(WalletInstance wallet, String password, String salt){
+  static Future<String> _generatePasswordKeyThread(String password, String salt) async{
+    var key = await compute(_generatePasswordKey, {'password': password, 'salt': salt});
+    return key;
+  }
+
+  static Future<Credentials?> decryptSigner(WalletInstance wallet, String password, String salt) async {
     try {
-      String passwordKey = _generatePasswordKey(password, salt);
+      String passwordKey = await _generatePasswordKeyThread(password, salt);
       AesCrypt aesCrypt = AesCrypt(padding: PaddingAES.pkcs7, key: passwordKey);
       String privateKey = aesCrypt.cbc.decrypt(enc: wallet.encryptedSigner, iv: salt);
       var privateKeyBytes = hexToBytes(privateKey);
@@ -40,7 +47,7 @@ class WalletHelpers {
     var rng = Random.secure();
     EthPrivateKey signer = EthPrivateKey.createRandom(rng);
     //
-    String passwordKey = _generatePasswordKey(password, salt);
+    String passwordKey = await _generatePasswordKeyThread(password, salt);
     AesCrypt aesCrypt = AesCrypt(padding: PaddingAES.pkcs7, key: passwordKey);
     //
     EthereumAddress initOwner = await signer.extractAddress();
@@ -63,7 +70,7 @@ class WalletHelpers {
     var rng = Random.secure();
     EthPrivateKey signer = EthPrivateKey.createRandom(rng);
     //
-    String passwordKey = _generatePasswordKey(password, salt);
+    String passwordKey = await _generatePasswordKeyThread(password, salt);
     AesCrypt aesCrypt = AesCrypt(padding: PaddingAES.pkcs7, key: passwordKey);
     //
     EthereumAddress initOwner = await signer.extractAddress();
