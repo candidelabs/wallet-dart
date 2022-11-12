@@ -27,6 +27,23 @@ class WalletHelpers {
     return key;
   }
 
+  static Future<bool> reEncryptSigner(WalletInstance wallet, String newPassword, String salt, {EthPrivateKey? credentials, String? password}) async{
+    Uint8List privateKeyBytes;
+    if (credentials != null){
+      privateKeyBytes = credentials.privateKey;
+    }else{
+      if (password == null) return false;
+      privateKeyBytes = ((await decryptSigner(wallet, password, salt)) as EthPrivateKey).privateKey;
+    }
+    String newPasswordKey = await _generatePasswordKeyThread(newPassword, salt);
+    AesCrypt aesCrypt = AesCrypt(padding: PaddingAES.pkcs7, key: newPasswordKey);
+    wallet.encryptedSigner = aesCrypt.cbc.encrypt(
+        inp: bytesToHex(privateKeyBytes, include0x: true),
+        iv: salt
+    ).toString();
+    return true;
+  }
+
   static Future<Credentials?> decryptSigner(WalletInstance wallet, String password, String salt) async {
     try {
       String passwordKey = await _generatePasswordKeyThread(password, salt);
