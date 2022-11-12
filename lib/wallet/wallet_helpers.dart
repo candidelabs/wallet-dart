@@ -33,7 +33,9 @@ class WalletHelpers {
       privateKeyBytes = credentials.privateKey;
     }else{
       if (password == null) return false;
-      privateKeyBytes = ((await decryptSigner(wallet, password, salt)) as EthPrivateKey).privateKey;
+      var _credentials = await decryptSigner(wallet, password, salt);
+      if (_credentials == null) return false;
+      privateKeyBytes = (_credentials as EthPrivateKey).privateKey;
     }
     String newPasswordKey = await _generatePasswordKeyThread(newPassword, salt);
     AesCrypt aesCrypt = AesCrypt(padding: PaddingAES.pkcs7, key: newPasswordKey);
