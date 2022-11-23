@@ -29,6 +29,10 @@ class EncodeFunctionData {
     ]), include0x: true);
   }
 
+  static multiSend(Uint8List transactions){
+    return bytesToHex(CWallet.multiSendCallOnlyInterface.self.function("multiSend").encodeCall([transactions]), include0x: true);
+  }
+
   static execTransactionFromModule(EthereumAddress to, BigInt value, Uint8List data, BigInt operation){
     return bytesToHex(CWallet.interface.self.function("execTransactionFromModule").encodeCall([
       to,
