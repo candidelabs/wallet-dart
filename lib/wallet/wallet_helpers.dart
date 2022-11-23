@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
+import 'package:pointycastle/key_derivators/api.dart';
+import 'package:pointycastle/key_derivators/scrypt.dart';
 import 'package:steel_crypt/steel_crypt.dart';
 import 'package:wallet_dart/constants/constants.dart';
 import 'package:wallet_dart/contracts/entrypoint.dart';
@@ -18,8 +21,11 @@ import 'package:web3dart/web3dart.dart';
 class WalletHelpers {
 
   static Future<String> _generatePasswordKey(Map args) async{
-    PassCrypt scrypt = PassCrypt.scrypt(cpu: 16384, mem: 8, par: 1);
-    return scrypt.hash(salt: args["salt"], inp: args["password"], len: 32);
+    final Scrypt scrypt = Scrypt();
+    scrypt.init(ScryptParameters(16384, 8, 1, 32, base64Decode(args["salt"])));
+    var passwordBytes = utf8.encode(args["password"]) as Uint8List;
+    var keyBytes = scrypt.process(passwordBytes);
+    return base64.encode(keyBytes);
   }
 
   static Future<String> _generatePasswordKeyThread(String password, String salt) async{
