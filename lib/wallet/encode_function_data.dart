@@ -6,7 +6,7 @@ import 'package:wallet_dart/contracts/erc20.dart';
 import 'package:wallet_dart/contracts/factories/EIP4337Manager.g.dart';
 import 'package:wallet_dart/contracts/factories/SingletonFactory.g.dart';
 import 'package:wallet_dart/contracts/wallet.dart';
-import 'package:wallet_dart/utils/encode.dart';
+import 'package:wallet_dart/utils/abi_utils.dart';
 import 'package:wallet_dart/wallet/message.dart';
 import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';

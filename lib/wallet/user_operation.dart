@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:wallet_dart/contracts/entrypoint.dart';
-import 'package:wallet_dart/utils/encode.dart';
+import 'package:wallet_dart/utils/abi_utils.dart';
 import 'package:wallet_dart/wallet/abi_encoders.dart';
 import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';

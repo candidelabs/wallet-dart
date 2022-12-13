@@ -11,7 +11,7 @@ import 'package:wallet_dart/contracts/entrypoint.dart';
 import 'package:wallet_dart/contracts/factories/EIP4337Manager.g.dart';
 import 'package:wallet_dart/contracts/factories/SafeProxy.g.dart';
 import 'package:wallet_dart/contracts/factories/SocialRecoveryModule.g.dart';
-import 'package:wallet_dart/utils/encode.dart';
+import 'package:wallet_dart/utils/abi_utils.dart';
 import 'package:wallet_dart/wallet/user_operation.dart';
 import 'package:wallet_dart/wallet/wallet_instance.dart';
 import 'package:web3dart/crypto.dart';
