@@ -1,40 +1,57 @@
 import 'dart:typed_data';
 
-import 'package:wallet_dart/constants/constants.dart';
-import 'package:wallet_dart/contracts/entrypoint.dart';
+import 'package:wallet_dart/contracts/gnosis_safe_proxy_facotry.dart';
+import 'package:wallet_dart/contracts/multi_send_call_only.dart';
 import 'package:wallet_dart/contracts/erc20.dart';
-import 'package:wallet_dart/contracts/factories/EIP4337Manager.g.dart';
-import 'package:wallet_dart/contracts/factories/SingletonFactory.g.dart';
-import 'package:wallet_dart/contracts/wallet.dart';
+import 'package:wallet_dart/contracts/factories/CandideWallet.g.dart';
+import 'package:wallet_dart/contracts/factories/ERC20.g.dart';
+import 'package:wallet_dart/contracts/factories/GnosisSafeProxyFactory.g.dart';
+import 'package:wallet_dart/contracts/factories/MultiSendCallOnly.g.dart';
+import 'package:wallet_dart/contracts/factories/SocialRecoveryModule.g.dart';
+import 'package:wallet_dart/contracts/social_module.dart';
+import 'package:wallet_dart/contracts/account.dart';
 import 'package:wallet_dart/utils/abi_utils.dart';
 import 'package:wallet_dart/wallet/message.dart';
 import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
+import 'package:http/http.dart';
 
 class EncodeFunctionData {
 
-  static erc20Approve(EthereumAddress spender, BigInt value){
-    return bytesToHex(CERC20.interface.self.function("approve").encodeCall([spender, value]), include0x: true);
+  static ERC20 _IERC20Interface(){
+    return IERC20.interface(address: EthereumAddress(Uint8List(20)), client: Web3Client("", Client()));
+  }
+
+  static CandideWallet _IAccountInterface(){
+    return IAccount.interface(address: EthereumAddress(Uint8List(20)), client: Web3Client("", Client()));
+  }
+
+  static MultiSendCallOnly _IMultiSendCallOnlyInterface(){
+    return IMultiSendCallOnly.interface(address: EthereumAddress(Uint8List(20)), client: Web3Client("", Client()));
+  }
+
+  static SocialRecoveryModule _ISocialModuleInterface(){
+    return ISocialModule.interface(address: EthereumAddress(Uint8List(20)), client: Web3Client("", Client()));
+  }
+
+  static GnosisSafeProxyFactory _IGnosisProxyFactoryInterface(){
+    return IGnosisSafeProxyFactory.interface(address: EthereumAddress(Uint8List(20)), client: Web3Client("", Client()));
+  }
+
+  static String erc20Approve(EthereumAddress spender, BigInt value){
+    return bytesToHex(_IERC20Interface().self.function("approve").encodeCall([spender, value]), include0x: true);
   }
 
   static String erc20Transfer(EthereumAddress to, BigInt value){
-    return bytesToHex(CERC20.interface.self.function("transfer").encodeCall([to, value]), include0x: true);
-  }
-  
-  static executeUserOp(EthereumAddress to, BigInt value, Uint8List data){
-    return bytesToHex(CWallet.interface.self.function("executeUserOp").encodeCall([
-      to,
-      value,
-      data
-    ]), include0x: true);
+    return bytesToHex(_IERC20Interface().self.function("transfer").encodeCall([to, value]), include0x: true);
   }
 
-  static multiSend(Uint8List transactions){
-    return bytesToHex(CWallet.multiSendCallOnlyInterface.self.function("multiSend").encodeCall([transactions]), include0x: true);
+  static String multiSend(Uint8List transactions){
+    return bytesToHex(_IMultiSendCallOnlyInterface().self.function("multiSend").encodeCall([transactions]), include0x: true);
   }
 
-  static execTransactionFromModule(EthereumAddress to, BigInt value, Uint8List data, BigInt operation){
-    return bytesToHex(CWallet.interface.self.function("execTransactionFromModule").encodeCall([
+  static String execTransactionFromModule(EthereumAddress to, BigInt value, Uint8List data, BigInt operation){
+    return bytesToHex(_IAccountInterface().self.function("execTransactionFromModule").encodeCall([
       to,
       value,
       data,
@@ -42,7 +59,51 @@ class EncodeFunctionData {
     ]), include0x: true);
   }
 
-  static getTransactionHash(
+  static String execTransactionFromEntrypoint(
+      EthereumAddress to,
+      BigInt value,
+      Uint8List data,
+      BigInt operation,
+      EthereumAddress paymaster,
+      EthereumAddress approveToken,
+      BigInt approveAmount
+    ){
+    return bytesToHex(_IAccountInterface().self.function("execTransactionFromEntrypoint").encodeCall([
+      to,
+      value,
+      data,
+      operation,
+      paymaster,
+      approveToken,
+      approveAmount
+    ]), include0x: true);
+  }
+
+  static String setupWithEntrypoint(
+    List<EthereumAddress> owners,
+    BigInt threshold,
+    EthereumAddress to,
+    Uint8List data,
+    EthereumAddress fallbackHandler,
+    EthereumAddress paymentToken,
+    BigInt payment,
+    EthereumAddress paymentReceiver,
+    EthereumAddress entryPoint
+  ){
+    return bytesToHex(_IAccountInterface().self.function("setupWithEntrypoint").encodeCall([
+      owners,
+      threshold,
+      to,
+      data,
+      fallbackHandler,
+      paymentToken,
+      payment,
+      paymentReceiver,
+      entryPoint,
+    ]), include0x: true);
+  }
+
+  static Uint8List getTransactionHash(
     EthereumAddress to,
     BigInt value,
     Uint8List data,
@@ -113,7 +174,7 @@ class EncodeFunctionData {
     );
   }
 
-  static execTransaction(
+  static String execTransaction(
       EthereumAddress to,
       BigInt value,
       Uint8List data,
@@ -124,10 +185,9 @@ class EncodeFunctionData {
       EthereumAddress tokenAddress,
       EthereumAddress refundReceiver,
       Uint8List signature,
-      {EIP4337Manager? walletInterface}
     ){
     return bytesToHex(
-      (walletInterface ?? CWallet.interface).self.function("execTransaction").encodeCall([
+      _IAccountInterface().self.function("execTransaction").encodeCall([
         to,
         value,
         data,
@@ -142,68 +202,40 @@ class EncodeFunctionData {
       include0x: true
     );
   }
-  
-  static initialize(EthereumAddress owner, List<EthereumAddress> guardians){
+
+
+  static String createProxyWithNonce(EthereumAddress singleton, Uint8List initializer, BigInt salt){
     return bytesToHex(
-      CWallet.interface.self.function("initialize").encodeCall([owner, guardians]),
+      _IGnosisProxyFactoryInterface().self.function("createProxyWithNonce").encodeCall([singleton, initializer, salt]),
       include0x: true
     );
   }
 
-  static transferOwner(EthereumAddress newOwner){
+  static String enableModule(EthereumAddress moduleAddress){
     return bytesToHex(
-        CWallet.interface.self.function("transferOwner").encodeCall([newOwner]),
-        include0x: true
-    );
-  }
-
-  static create2Deploy(Uint8List initCode, Uint8List salt){
-    return bytesToHex(
-        SingletonFactory(address: Constants.singletonFactoryAddress, client: Constants.web3client).self.function("deploy").encodeCall([initCode, salt]),
-        include0x: true
-    );
-  }
-
-  static enableModule(EthereumAddress moduleAddress){
-    return bytesToHex(
-        CWallet.interface.self.function("enableModule").encodeCall([moduleAddress]),
-        include0x: true
-    );
-  }
-
-  static setupSocialRecoveryModule(EthereumAddress guardian, BigInt threshold){
-    return bytesToHex(
-        CWallet.recoveryInterface(Constants.zeroAddress).self.function("setup").encodeCall([[guardian], threshold]),
-        include0x: true
-    );
-  }
-
-  static grantGuardian(EthereumAddress guardian, BigInt threshold){
-    return bytesToHex(
-      CWallet.recoveryInterface(Constants.zeroAddress).self.function("addFriendWithThreshold").encodeCall([guardian, threshold]),
+      _IAccountInterface().self.function("enableModule").encodeCall([moduleAddress]),
       include0x: true
     );
   }
 
-  static revokeGuardian(BigInt guardianIndex, BigInt threshold){
+  static String disableModule(EthereumAddress prevModule, EthereumAddress moduleAddress){
     return bytesToHex(
-      CWallet.recoveryInterface(Constants.zeroAddress).self.function("removeFriend").encodeCall([guardianIndex, threshold]),
+      _IAccountInterface().self.function("disableModule").encodeCall([prevModule, moduleAddress]),
       include0x: true
     );
   }
 
-  static addEntryPointStake(BigInt value){
-    return bytesToHex(CWallet.interface.self.function("executeUserOp").encodeCall([
-      CEntrypoint.address,
-      value,
-      CEntrypoint.interface.self.function("addStake").encodeCall([Constants.defaultUnlockDelaySeconds])
-    ]), include0x: true);
+  static grantGuardian(EthereumAddress account, EthereumAddress guardian, BigInt threshold){
+    return bytesToHex(
+      _ISocialModuleInterface().self.function("addGuardianWithThreshold").encodeCall([account, guardian, threshold]),
+      include0x: true
+    );
   }
 
-  static upgradeTo(EthereumAddress newImplementation){
+  static revokeGuardian(EthereumAddress account, EthereumAddress prevGuardian, EthereumAddress guardian, BigInt threshold){
     return bytesToHex(
-        CWallet.interface.self.function("upgradeTo").encodeCall([newImplementation]),
-        include0x: true
+      _ISocialModuleInterface().self.function("revokeGuardianWithThreshold").encodeCall([account, prevGuardian, guardian, threshold]),
+      include0x: true
     );
   }
   

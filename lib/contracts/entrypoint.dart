@@ -1,10 +1,9 @@
-import 'package:wallet_dart/constants/constants.dart';
 import 'package:wallet_dart/contracts/factories/EntryPoint.g.dart';
 import 'package:web3dart/web3dart.dart';
 
-class CEntrypoint {
-  static EthereumAddress address = EthereumAddress.fromHex("0x602aB3881Ff3Fa8dA60a8F44Cf633e91bA1FdB69");
+class IEntrypoint {
+  static EthereumAddress address = EthereumAddress.fromHex("0xC1c7Ff116Acd223426a50De4d4Bb7117D0c387Ff");
 
-  static EntryPoint interface = EntryPoint(address: address, client: Constants.web3client);
-
+  static EntryPoint interface({EthereumAddress? address, required Web3Client client}) =>
+      EntryPoint(address: address ?? IEntrypoint.address, client: client);
 }

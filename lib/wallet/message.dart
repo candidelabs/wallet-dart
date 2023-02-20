@@ -31,13 +31,12 @@ class Message {
               op.nonce,
               bytesToHex(keccak256(hexToBytes(op.initCode)), include0x: true),
               bytesToHex(keccak256(hexToBytes(op.callData)), include0x: true),
-              op.callGas,
-              op.verificationGas,
+              op.callGasLimit,
+              op.verificationGasLimit,
               op.preVerificationGas,
               op.maxFeePerGas,
               op.maxPriorityFeePerGas,
-              op.paymaster,
-              bytesToHex(keccak256(hexToBytes(op.paymasterData)), include0x: true),
+              bytesToHex(keccak256(hexToBytes(op.paymasterAndData)), include0x: true),
             ]
         )
     );
@@ -55,7 +54,10 @@ class Message {
       var x = _pack(types[i], values[i]);
       sink.add(x);
     }
-    return sink.asBytes();
+
+    var sinkBytes = sink.asBytes();
+    sink.close();
+    return sinkBytes;
   }
 
 
