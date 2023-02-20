@@ -17,30 +17,26 @@ class UserOperation {
   int nonce;
   String initCode;
   String callData;
-  int callGas;
-  int verificationGas;
+  int callGasLimit;
+  int verificationGasLimit;
   int preVerificationGas;
   int maxFeePerGas;
   int maxPriorityFeePerGas;
-  EthereumAddress paymaster;
-  String paymasterData;
+  String paymasterAndData;
   String signature;
-  String moduleManagerSalt;
 
   UserOperation(
       {required this.sender,
       required this.nonce,
       required this.initCode,
       required this.callData,
-      required this.callGas,
-      required this.verificationGas,
+      required this.callGasLimit,
+      required this.verificationGasLimit,
       required this.preVerificationGas,
       required this.maxFeePerGas,
       required this.maxPriorityFeePerGas,
-      required this.paymaster,
-      required this.paymasterData,
+      required this.paymasterAndData,
       required this.signature,
-      required this.moduleManagerSalt
       });
 
   UserOperation.fromJson(Map<String, dynamic> json)
@@ -48,30 +44,26 @@ class UserOperation {
         nonce = json['nonce'],
         initCode = json['initCode'],
         callData = json['callData'],
-        callGas = json['callGas'],
-        verificationGas = json['verificationGas'],
+        callGasLimit = json['callGasLimit'],
+        verificationGasLimit = json['verificationGasLimit'],
         preVerificationGas = json['preVerificationGas'],
         maxFeePerGas = json['maxFeePerGas'],
         maxPriorityFeePerGas = json['maxPriorityFeePerGas'],
-        paymaster = EthereumAddress.fromHex(json['paymaster']),
-        paymasterData = json['paymasterData'],
-        signature = json['signature'],
-        moduleManagerSalt = json['moduleManagerSalt'];
+        paymasterAndData = json['paymasterAndData'],
+        signature = json['signature'];
 
   Map<String, dynamic> toJson() => {
     'sender': sender.hexEip55,
     'nonce': nonce,
     'initCode': initCode,
     'callData': callData,
-    'callGas': callGas,
-    'verificationGas': verificationGas,
+    'callGasLimit': callGasLimit,
+    'verificationGasLimit': verificationGasLimit,
     'preVerificationGas': preVerificationGas,
     'maxFeePerGas': maxFeePerGas,
     'maxPriorityFeePerGas': maxPriorityFeePerGas,
-    'paymaster': paymaster.hexEip55,
-    'paymasterData': paymasterData,
+    'paymasterAndData': paymasterAndData,
     'signature': signature,
-    'moduleManagerSalt': moduleManagerSalt,
   };
 
   List<dynamic> toList({bool hexRepresentation = false}) => [
@@ -79,13 +71,12 @@ class UserOperation {
     hexRepresentation ? nonce.toString() : BigInt.from(nonce),
     hexRepresentation ? initCode : hexToBytes(initCode),
     hexRepresentation ? callData : hexToBytes(callData),
-    hexRepresentation ? callGas.toString() : BigInt.from(callGas),
-    hexRepresentation ? verificationGas.toString() : BigInt.from(verificationGas),
+    hexRepresentation ? callGasLimit.toString() : BigInt.from(callGasLimit),
+    hexRepresentation ? verificationGasLimit.toString() : BigInt.from(verificationGasLimit),
     hexRepresentation ? preVerificationGas.toString() : BigInt.from(preVerificationGas),
     hexRepresentation ? maxFeePerGas.toString() : BigInt.from(maxFeePerGas),
     hexRepresentation ? maxPriorityFeePerGas.toString() : BigInt.from(maxPriorityFeePerGas),
-    hexRepresentation ? paymaster.hexEip55 : paymaster,
-    hexRepresentation ? paymasterData : hexToBytes(paymasterData),
+    hexRepresentation ? paymasterAndData : hexToBytes(paymasterAndData),
     hexRepresentation ? signature : hexToBytes(signature)
   ];
 
@@ -94,30 +85,27 @@ class UserOperation {
     int? nonce,
     String? initCode,
     String? callData,
-    int? callGas,
+    int? callGasLimit,
     int? verificationGas,
     int? preVerificationGas,
     int? maxFeePerGas,
     int? maxPriorityFeePerGas,
     EthereumAddress? paymaster,
-    String? paymasterData,
+    String? paymasterAndData,
     String? signature,
-    String? moduleManagerSalt,
   }){
     return UserOperation(
       sender: sender ?? EthereumAddress(Uint8List(EthereumAddress.addressByteLength)),
       nonce: nonce ?? initNonce,
       initCode: initCode ?? nullCode,
       callData: callData ?? nullCode,
-      callGas: callGas ?? defaultGas,
-      verificationGas: verificationGas ?? defaultGas,
+      callGasLimit: callGasLimit ?? defaultGas,
+      verificationGasLimit: verificationGas ?? defaultGas,
       preVerificationGas: preVerificationGas ?? defaultGas,
       maxFeePerGas: maxFeePerGas ?? _defaultMaxFee,
       maxPriorityFeePerGas: maxPriorityFeePerGas ?? _defaultMaxFee,
-      paymaster: paymaster ?? EthereumAddress(Uint8List(EthereumAddress.addressByteLength)),
-      paymasterData: paymasterData ?? nullCode,
+      paymasterAndData: paymasterAndData ?? nullCode,
       signature: signature ?? nullCode,
-      moduleManagerSalt: moduleManagerSalt ?? nullCode,
     );
   }
 
@@ -134,9 +122,9 @@ class UserOperation {
   }
 
   Future<void> sign(Credentials credentials, BigInt chainId, {Uint8List? overrideRequestId}) async {
-    var _requestId = await requestId(CEntrypoint.address, chainId);
+    var _requestId = await requestId(IEntrypoint.address, chainId);
     signature = bytesToHex(
-      await credentials.signPersonalMessage(
+      credentials.signPersonalMessageToUint8List(
         overrideRequestId ?? _requestId,
       ),
     include0x: true);

@@ -11,7 +11,9 @@ Uint8List encodeAbi(List<String> types, List<dynamic> values){
     abiTypes.add(abiType);
   }
   TupleType(abiTypes).encode(values, result);
-  return result.asBytes();
+  var resultBytes = result.asBytes();
+  result.close();
+  return resultBytes;
 }
 
 List<dynamic> decodeAbi(List<String> types, Uint8List value){
