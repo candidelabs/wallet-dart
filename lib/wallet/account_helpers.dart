@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:pointycastle/key_derivators/api.dart';
 import 'package:pointycastle/key_derivators/scrypt.dart';
 import 'package:steel_crypt/steel_crypt.dart';
-import 'package:wallet_dart/contracts/factories/CandideWalletProxy.g.dart';
+import 'package:wallet_dart/contracts/gnosis_safe_proxy_facotry.dart';
 import 'package:wallet_dart/wallet/encode_function_data.dart';
 import 'package:wallet_dart/wallet/account.dart';
 import 'package:wallet_dart/wallet/encrypted_signer.dart';
@@ -107,13 +107,15 @@ class AccountHelpers {
     required EthereumAddress factory,
     required EthereumAddress singleton,
     required EthereumAddress entrypoint,
-    required EthereumAddress fallbackHandler
+    required EthereumAddress fallbackHandler,
+    required Web3Client client,
   }) async{
     return Account(
       chainId: chainId,
       name: name,
       address: EthereumAddress.fromHex(
-        getAccountAddress(
+        await getAccountAddress(
+          client,
           factory,
           singleton,
           entrypoint,
@@ -131,7 +133,7 @@ class AccountHelpers {
     );
   }
 
-  static String getAccountAddress(EthereumAddress factory, EthereumAddress singleton, EthereumAddress entryPoint, EthereumAddress fallbackHandler, List<EthereumAddress> signers, BigInt saltNonce){
+  static Future<String> getAccountAddress(Web3Client client, EthereumAddress factory, EthereumAddress singleton, EthereumAddress entryPoint, EthereumAddress fallbackHandler, List<EthereumAddress> signers, BigInt saltNonce) async {
     Uint8List initializer = hexToBytes(EncodeFunctionData.setupWithEntrypoint(
         signers,
         BigInt.one,
@@ -143,8 +145,11 @@ class AccountHelpers {
         EthereumAddress.fromHex("0x0000000000000000000000000000000000000000"),
         entryPoint
     ));
+    //
+    Uint8List proxyBytecode = await IGnosisSafeProxyFactory.interface(address: factory, client: client).proxyCreationCode();
+    //
     Uint8List salt = keccak256(AbiUtil.solidityPack(["bytes32", "uint256"], [keccak256(initializer), saltNonce]));
-    Uint8List deploymentData = AbiUtil.solidityPack(["bytes", "uint256"], [CandideWalletProxy.byteCode, BigInt.parse(singleton.hexNo0x, radix: 16)]);
+    Uint8List deploymentData = AbiUtil.solidityPack(["bytes", "uint256"], [proxyBytecode, BigInt.parse(singleton.hexNo0x, radix: 16)]);
     return _AccountHelperUtils.getCreate2Address(
       factory,
       salt,
