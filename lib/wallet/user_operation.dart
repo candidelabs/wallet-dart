@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:wallet_dart/contracts/entrypoint.dart';
 import 'package:wallet_dart/utils/abi_utils.dart';
 import 'package:wallet_dart/wallet/abi_encoders.dart';
 import 'package:web3dart/crypto.dart';
@@ -121,8 +120,8 @@ class UserOperation {
     return keccak256(encodeAbi(["bytes32", "address", "uint256"], [keccak256(pack()), entryPoint, chainId]));
   }
 
-  Future<void> sign(Credentials credentials, BigInt chainId, {Uint8List? overrideRequestId}) async {
-    var _requestId = await requestId(IEntrypoint.address, chainId);
+  Future<void> sign(Credentials credentials, EthereumAddress entrypoint, BigInt chainId, {Uint8List? overrideRequestId}) async {
+    var _requestId = await requestId(entrypoint, chainId);
     signature = bytesToHex(
       credentials.signPersonalMessageToUint8List(
         overrideRequestId ?? _requestId,
