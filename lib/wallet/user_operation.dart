@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:wallet_dart/contracts/entrypoint.dart';
 import 'package:wallet_dart/utils/abi_utils.dart';
 import 'package:wallet_dart/wallet/abi_encoders.dart';
 import 'package:web3dart/crypto.dart';
@@ -7,8 +8,8 @@ import 'package:web3dart/web3dart.dart';
 
 class UserOperation {
   //
-  static const defaultGas = 215000;
-  static const _defaultMaxFee = 50000000000; // 50 Gwei
+  static BigInt _defaultGas = BigInt.from(215000);
+  static BigInt _defaultMaxFee = BigInt.from(50000000000); // 50 Gwei
   static const initNonce = 0;
   static const nullCode = "0x";
   //
@@ -16,11 +17,11 @@ class UserOperation {
   int nonce;
   String initCode;
   String callData;
-  int callGasLimit;
-  int verificationGasLimit;
-  int preVerificationGas;
-  int maxFeePerGas;
-  int maxPriorityFeePerGas;
+  BigInt callGasLimit;
+  BigInt verificationGasLimit;
+  BigInt preVerificationGas;
+  BigInt maxFeePerGas;
+  BigInt maxPriorityFeePerGas;
   String paymasterAndData;
   String signature;
 
@@ -70,11 +71,11 @@ class UserOperation {
     hexRepresentation ? nonce.toString() : BigInt.from(nonce),
     hexRepresentation ? initCode : hexToBytes(initCode),
     hexRepresentation ? callData : hexToBytes(callData),
-    hexRepresentation ? callGasLimit.toString() : BigInt.from(callGasLimit),
-    hexRepresentation ? verificationGasLimit.toString() : BigInt.from(verificationGasLimit),
-    hexRepresentation ? preVerificationGas.toString() : BigInt.from(preVerificationGas),
-    hexRepresentation ? maxFeePerGas.toString() : BigInt.from(maxFeePerGas),
-    hexRepresentation ? maxPriorityFeePerGas.toString() : BigInt.from(maxPriorityFeePerGas),
+    hexRepresentation ? callGasLimit.toString() : callGasLimit,
+    hexRepresentation ? verificationGasLimit.toString() : verificationGasLimit,
+    hexRepresentation ? preVerificationGas.toString() : preVerificationGas,
+    hexRepresentation ? maxFeePerGas.toString() : maxFeePerGas,
+    hexRepresentation ? maxPriorityFeePerGas.toString() : maxPriorityFeePerGas,
     hexRepresentation ? paymasterAndData : hexToBytes(paymasterAndData),
     hexRepresentation ? signature : hexToBytes(signature)
   ];
@@ -84,11 +85,11 @@ class UserOperation {
     int? nonce,
     String? initCode,
     String? callData,
-    int? callGasLimit,
-    int? verificationGas,
-    int? preVerificationGas,
-    int? maxFeePerGas,
-    int? maxPriorityFeePerGas,
+    BigInt? callGasLimit,
+    BigInt? verificationGas,
+    BigInt? preVerificationGas,
+    BigInt? maxFeePerGas,
+    BigInt? maxPriorityFeePerGas,
     EthereumAddress? paymaster,
     String? paymasterAndData,
     String? signature,
@@ -98,9 +99,9 @@ class UserOperation {
       nonce: nonce ?? initNonce,
       initCode: initCode ?? nullCode,
       callData: callData ?? nullCode,
-      callGasLimit: callGasLimit ?? defaultGas,
-      verificationGasLimit: verificationGas ?? defaultGas,
-      preVerificationGas: preVerificationGas ?? defaultGas,
+      callGasLimit: callGasLimit ?? _defaultGas,
+      verificationGasLimit: verificationGas ?? _defaultGas,
+      preVerificationGas: preVerificationGas ?? _defaultGas,
       maxFeePerGas: maxFeePerGas ?? _defaultMaxFee,
       maxPriorityFeePerGas: maxPriorityFeePerGas ?? _defaultMaxFee,
       paymasterAndData: paymasterAndData ?? nullCode,
