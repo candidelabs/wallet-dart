@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:wallet_dart/contracts/entrypoint.dart';
 import 'package:wallet_dart/utils/abi_utils.dart';
 import 'package:wallet_dart/wallet/abi_encoders.dart';
 import 'package:web3dart/crypto.dart';
@@ -10,11 +9,11 @@ class UserOperation {
   //
   static BigInt _defaultGas = BigInt.from(215000);
   static BigInt _defaultMaxFee = BigInt.from(50000000000); // 50 Gwei
-  static const initNonce = 0;
-  static const nullCode = "0x";
+  static BigInt _initNonce = BigInt.zero;
+  static const _nullCode = "0x";
   //
   EthereumAddress sender;
-  int nonce;
+  BigInt nonce;
   String initCode;
   String callData;
   BigInt callGasLimit;
@@ -41,48 +40,48 @@ class UserOperation {
 
   UserOperation.fromJson(Map<String, dynamic> json)
       : sender = EthereumAddress.fromHex(json['sender']),
-        nonce = json['nonce'],
+        nonce = BigInt.parse(json['nonce'].replaceAll("0x", ""), radix: 16),
         initCode = json['initCode'],
         callData = json['callData'],
-        callGasLimit = json['callGasLimit'],
-        verificationGasLimit = json['verificationGasLimit'],
-        preVerificationGas = json['preVerificationGas'],
-        maxFeePerGas = json['maxFeePerGas'],
-        maxPriorityFeePerGas = json['maxPriorityFeePerGas'],
+        callGasLimit = BigInt.parse(json['callGasLimit'].replaceAll("0x", ""), radix: 16),
+        verificationGasLimit = BigInt.parse(json['verificationGasLimit'].replaceAll("0x", ""), radix: 16),
+        preVerificationGas = BigInt.parse(json['preVerificationGas'].replaceAll("0x", ""), radix: 16),
+        maxFeePerGas = BigInt.parse(json['maxFeePerGas'].replaceAll("0x", ""), radix: 16),
+        maxPriorityFeePerGas = BigInt.parse(json['maxPriorityFeePerGas'].replaceAll("0x", ""), radix: 16),
         paymasterAndData = json['paymasterAndData'],
         signature = json['signature'];
 
   Map<String, dynamic> toJson() => {
     'sender': sender.hexEip55,
-    'nonce': nonce,
+    'nonce': "0x"+nonce.toRadixString(16),
     'initCode': initCode,
     'callData': callData,
-    'callGasLimit': callGasLimit,
-    'verificationGasLimit': verificationGasLimit,
-    'preVerificationGas': preVerificationGas,
-    'maxFeePerGas': maxFeePerGas,
-    'maxPriorityFeePerGas': maxPriorityFeePerGas,
+    'callGasLimit': "0x"+callGasLimit.toRadixString(16),
+    'verificationGasLimit': "0x"+verificationGasLimit.toRadixString(16),
+    'preVerificationGas': "0x"+preVerificationGas.toRadixString(16),
+    'maxFeePerGas': "0x"+maxFeePerGas.toRadixString(16),
+    'maxPriorityFeePerGas': "0x"+maxPriorityFeePerGas.toRadixString(16),
     'paymasterAndData': paymasterAndData,
     'signature': signature,
   };
 
   List<dynamic> toList({bool hexRepresentation = false}) => [
     hexRepresentation ? sender.hexEip55 : sender,
-    hexRepresentation ? nonce.toString() : BigInt.from(nonce),
+    hexRepresentation ? "0x"+nonce.toRadixString(16) : nonce,
     hexRepresentation ? initCode : hexToBytes(initCode),
     hexRepresentation ? callData : hexToBytes(callData),
-    hexRepresentation ? callGasLimit.toString() : callGasLimit,
-    hexRepresentation ? verificationGasLimit.toString() : verificationGasLimit,
-    hexRepresentation ? preVerificationGas.toString() : preVerificationGas,
-    hexRepresentation ? maxFeePerGas.toString() : maxFeePerGas,
-    hexRepresentation ? maxPriorityFeePerGas.toString() : maxPriorityFeePerGas,
+    hexRepresentation ? "0x"+callGasLimit.toRadixString(16) : callGasLimit,
+    hexRepresentation ? "0x"+verificationGasLimit.toRadixString(16) : verificationGasLimit,
+    hexRepresentation ? "0x"+preVerificationGas.toRadixString(16) : preVerificationGas,
+    hexRepresentation ? "0x"+maxFeePerGas.toRadixString(16) : maxFeePerGas,
+    hexRepresentation ? "0x"+maxPriorityFeePerGas.toRadixString(16) : maxPriorityFeePerGas,
     hexRepresentation ? paymasterAndData : hexToBytes(paymasterAndData),
     hexRepresentation ? signature : hexToBytes(signature)
   ];
 
   static UserOperation get({
     EthereumAddress? sender,
-    int? nonce,
+    BigInt? nonce,
     String? initCode,
     String? callData,
     BigInt? callGasLimit,
@@ -96,16 +95,16 @@ class UserOperation {
   }){
     return UserOperation(
       sender: sender ?? EthereumAddress(Uint8List(EthereumAddress.addressByteLength)),
-      nonce: nonce ?? initNonce,
-      initCode: initCode ?? nullCode,
-      callData: callData ?? nullCode,
+      nonce: nonce ?? _initNonce,
+      initCode: initCode ?? _nullCode,
+      callData: callData ?? _nullCode,
       callGasLimit: callGasLimit ?? _defaultGas,
       verificationGasLimit: verificationGas ?? _defaultGas,
       preVerificationGas: preVerificationGas ?? _defaultGas,
       maxFeePerGas: maxFeePerGas ?? _defaultMaxFee,
       maxPriorityFeePerGas: maxPriorityFeePerGas ?? _defaultMaxFee,
-      paymasterAndData: paymasterAndData ?? nullCode,
-      signature: signature ?? nullCode,
+      paymasterAndData: paymasterAndData ?? _nullCode,
+      signature: signature ?? _nullCode,
     );
   }
 
@@ -117,15 +116,15 @@ class UserOperation {
     return hexToBytes(abiEncodedHex);
   }
 
-  Future<Uint8List> requestId(EthereumAddress entryPoint, BigInt chainId) async {
+  Uint8List getHash(EthereumAddress entryPoint, BigInt chainId) {
     return keccak256(encodeAbi(["bytes32", "address", "uint256"], [keccak256(pack()), entryPoint, chainId]));
   }
 
-  Future<void> sign(Credentials credentials, EthereumAddress entrypoint, BigInt chainId, {Uint8List? overrideRequestId}) async {
-    var _requestId = await requestId(entrypoint, chainId);
+  Future<void> sign(Credentials credentials, EthereumAddress entrypoint, BigInt chainId) async {
+    var _userOpHash = getHash(entrypoint, chainId);
     signature = bytesToHex(
       credentials.signPersonalMessageToUint8List(
-        overrideRequestId ?? _requestId,
+        _userOpHash,
       ),
     include0x: true);
   }
