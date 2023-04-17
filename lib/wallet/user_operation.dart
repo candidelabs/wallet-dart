@@ -113,7 +113,22 @@ class UserOperation {
     var abiEncoded = AbiEncoders.requestIdCoder.functions.first.encodeCall([params]).sublist(4);
     var abiEncodedHex = bytesToHex(abiEncoded);
     abiEncodedHex = abiEncodedHex.substring(64, abiEncodedHex.length - 64);
-    return hexToBytes(abiEncodedHex);
+    return encodeAbi(
+      [
+        "address", "uint256",
+        "bytes32", "bytes32",
+        "uint256", "uint256", "uint256",
+        "uint256", "uint256",
+        "bytes32"
+      ],
+      [
+        sender, nonce,
+        keccak256(hexToBytes(initCode)), keccak256(hexToBytes(callData)),
+        callGasLimit, verificationGasLimit, preVerificationGas,
+        maxFeePerGas, maxPriorityFeePerGas,
+        keccak256(hexToBytes(paymasterAndData)),
+      ]
+    );
   }
 
   Uint8List getHash(EthereumAddress entryPoint, BigInt chainId) {
