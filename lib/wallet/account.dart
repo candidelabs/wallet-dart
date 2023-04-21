@@ -1,6 +1,7 @@
 import 'package:web3dart/web3dart.dart';
 
 class Account {
+  String version;
   int chainId;
   EthereumAddress address;
   List<String> signersIds;
@@ -14,7 +15,8 @@ class Account {
   EthereumAddress? entrypoint;
 
   Account(
-      {required this.chainId,
+      {required this.version,
+      required this.chainId,
       required this.address,
       required this.signersIds,
       required this.name,
@@ -27,7 +29,8 @@ class Account {
       this.entrypoint});
 
   Account.fromJson(Map json)
-      : chainId = json['chainId'],
+      : version = json['version'],
+        chainId = json['chainId'],
         name = json['name'],
         address = EthereumAddress.fromHex(json['address']),
         signersIds = json['signersIds'],
@@ -40,6 +43,7 @@ class Account {
         entrypoint = json['entrypoint'] != null ? EthereumAddress.fromHex(json['entrypoint']) : null;
 
   Map<String, dynamic> toJson() => {
+    'version': version,
     'chainId': chainId,
     'name': name,
     'address': address.hexEip55,
