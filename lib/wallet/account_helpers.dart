@@ -84,13 +84,14 @@ class AccountHelpers {
     );
   }
 
-  static Future<EncryptedSigner> createEncryptedSigner({required String salt, required String password}) async{
+  static Future<EncryptedSigner> createEncryptedSigner({required String version, required String salt, required String password}) async{
     String base64Salt = base64Encode(hexToBytes(salt));
     String passwordKey = await _generatePasswordKeyThread(password, base64Salt);
     AesCrypt aesCrypt = AesCrypt(padding: PaddingAES.pkcs7, key: passwordKey);
     var secureRandom = Random.secure();
     EthPrivateKey signer = EthPrivateKey.createRandom(secureRandom);
     return EncryptedSigner(
+      version: version,
       salt: salt,
       encryptedPrivateKey: aesCrypt.cbc.encrypt(
         inp: bytesToHex(signer.privateKey, include0x: true),
