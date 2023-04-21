@@ -67,6 +67,7 @@ class AccountHelpers {
   }
 
   static Future<Account> createRecovery({
+    required String version,
     required int chainId,
     required String name,
     required EthereumAddress address,
@@ -74,6 +75,7 @@ class AccountHelpers {
     required List<String> signersIds,
   }) async{
     return Account(
+      version: version,
       chainId: chainId,
       name: name,
       address: address,
@@ -99,6 +101,7 @@ class AccountHelpers {
   }
 
   static Future<Account> createAccount({
+    required String version,
     required int chainId,
     required String name,
     required String salt,
@@ -111,6 +114,7 @@ class AccountHelpers {
     required Web3Client client,
   }) async{
     return Account(
+      version: version,
       chainId: chainId,
       name: name,
       address: EthereumAddress.fromHex(
