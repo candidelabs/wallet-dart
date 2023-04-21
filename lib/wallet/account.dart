@@ -27,7 +27,7 @@ class Account {
       this.entrypoint});
 
   Account.fromJson(Map json)
-      : version = json['version'],
+      : version = json['version'] ?? "0.0.0",
         chainId = json['chainId'],
         name = json['name'],
         address = EthereumAddress.fromHex(json['address']),
