@@ -7,6 +7,7 @@ class Account {
   String name;
   String salt;
   String? recoveryId;
+  EthereumAddress? socialRecoveryModule;
   EthereumAddress? factory;
   EthereumAddress? singleton;
   EthereumAddress? fallback;
@@ -19,6 +20,7 @@ class Account {
       required this.name,
       required this.salt,
       this.recoveryId,
+      this.socialRecoveryModule,
       this.factory,
       this.singleton,
       this.fallback,
@@ -31,6 +33,7 @@ class Account {
         signersIds = json['signersIds'],
         salt = json['salt'],
         recoveryId = json['recoveryId'],
+        socialRecoveryModule = json['socialRecoveryModule'] != null ? EthereumAddress.fromHex(json['socialRecoveryModule']) : null,
         factory = json['factory'] != null ? EthereumAddress.fromHex(json['factory']) : null,
         singleton = json['singleton'] != null ? EthereumAddress.fromHex(json['singleton']) : null,
         fallback = json['fallback'] != null ? EthereumAddress.fromHex(json['fallback']) : null,
@@ -43,6 +46,7 @@ class Account {
     'signersIds': signersIds,
     'salt': salt,
     'recoveryId': recoveryId,
+    'socialRecoveryModule': socialRecoveryModule?.hexEip55,
     'factory': factory?.hexEip55,
     'singleton': singleton?.hexEip55,
     'fallback': fallback?.hexEip55,
