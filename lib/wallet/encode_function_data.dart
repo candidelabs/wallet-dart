@@ -114,6 +114,7 @@ class EncodeFunctionData {
     EthereumAddress gasToken,
     EthereumAddress refundReceiver,
     BigInt _nonce,
+    BigInt chainId,
     {required EthereumAddress address} // EIP4337 Manager
   ){
     Uint8List safeTxHash =
@@ -157,7 +158,7 @@ class EncodeFunctionData {
       [
         Uint8List.fromList([0x19]),
         Uint8List.fromList([0x01]),
-        domainSeparator(address),
+        domainSeparator(address, chainId),
         safeTxHash
       ]
     ));
@@ -165,11 +166,11 @@ class EncodeFunctionData {
 
   static final Uint8List DOMAIN_SEPARATOR_TYPEHASH = hexToBytes("0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218");
 
-  static Uint8List domainSeparator(EthereumAddress address) {
+  static Uint8List domainSeparator(EthereumAddress address, BigInt chainId) {
     return keccak256(
       encodeAbi(
         ["bytes32", "uint256", "address"],
-        [DOMAIN_SEPARATOR_TYPEHASH, BigInt.from(5), address]
+        [DOMAIN_SEPARATOR_TYPEHASH, chainId, address]
       )
     );
   }
