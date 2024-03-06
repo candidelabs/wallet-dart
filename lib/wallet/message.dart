@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:wallet_dart/wallet/user_operation.dart';
 import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
-import 'package:web3dart/src/utils/length_tracking_byte_sink.dart';
 
 var _regexBytes = RegExp(r"^(bytes)([0-9]+)$");
 var _regexNumber = RegExp(r"^(u?int)([0-9]*)$");

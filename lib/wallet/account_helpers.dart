@@ -11,7 +11,6 @@ import 'package:wallet_dart/wallet/encode_function_data.dart';
 import 'package:wallet_dart/wallet/account.dart';
 import 'package:wallet_dart/wallet/encrypted_signer.dart';
 import 'package:web3dart/crypto.dart';
-import 'package:web3dart/src/utils/length_tracking_byte_sink.dart';
 import 'package:web3dart/web3dart.dart';
 
 class AccountHelpers {

@@ -7,11 +7,11 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
-  web3dart: ^2.5.1
+  web3dart: ^2.7.0
   eth_sig_util: ^0.0.9
-  http: ^0.13.5
+  http: ^1.2.1
   steel_crypt: ^3.0.0+1
-  pointycastle: ^3.6.2
+  pointycastle: ^3.7.4
   flutter:
     sdk: flutter
 
