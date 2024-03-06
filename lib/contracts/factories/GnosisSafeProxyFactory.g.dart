@@ -89,18 +89,6 @@ class GnosisSafeProxyFactory extends _i1.GeneratedContract {
     final response = await read(function, params, atBlock);
     return (response[0] as _i2.Uint8List);
   }
-
-  /// Returns a live stream of all ProxyCreation events emitted by this contract.
-  Stream<ProxyCreation> proxyCreationEvents(
-      {_i1.BlockNum? fromBlock, _i1.BlockNum? toBlock}) {
-    final event = self.event('ProxyCreation');
-    final filter = _i1.FilterOptions.events(
-        contract: self, event: event, fromBlock: fromBlock, toBlock: toBlock);
-    return client.events(filter).map((_i1.FilterEvent result) {
-      final decoded = event.decodeResults(result.topics!, result.data!);
-      return ProxyCreation(decoded);
-    });
-  }
 }
 
 class ProxyCreation {

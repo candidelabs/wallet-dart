@@ -3,11 +3,11 @@ description: Candide helper/essential shared functions.
 version: 0.0.1
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=3.2.0 <4.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
-  web3dart: ^2.7.0
+  web3dart: 2.7.0
   eth_sig_util: ^0.0.9
   http: ^1.2.1
   steel_crypt: ^3.0.0+1
